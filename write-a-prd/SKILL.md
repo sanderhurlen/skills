@@ -1,9 +1,20 @@
 ---
 name: write-a-prd
-description: Create a PRD through user interview, codebase exploration, and module design, then submit as a GitHub issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
+description: Create a PRD through user interview, codebase exploration, and module design, then submit as an issue (GitHub or Azure DevOps). Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
 ---
 
 This skill will be invoked when the user wants to create a PRD. You may skip steps if you don't consider them necessary.
+
+## Detect the platform first
+
+```bash
+git remote get-url origin
+```
+
+- **GitHub**: URL contains `github.com` → submit as a GitHub issue with `gh issue create`. Extract `owner/repo`.
+- **Azure DevOps**: URL contains `dev.azure.com` → submit as a work item with `az boards work-item create`. Extract `ORG_URL` and `PROJECT`.
+
+## Steps
 
 1. Ask the user for a long, detailed description of the problem they want to solve and any potential ideas for solutions.
 
@@ -13,11 +24,11 @@ This skill will be invoked when the user wants to create a PRD. You may skip ste
 
 4. Sketch out the major modules you will need to build or modify to complete the implementation. Actively look for opportunities to extract deep modules that can be tested in isolation.
 
-A deep module (as opposed to a shallow module) is one which encapsulates a lot of functionality in a simple, testable interface which rarely changes.
+   A deep module (as opposed to a shallow module) is one which encapsulates a lot of functionality in a simple, testable interface which rarely changes.
 
-Check with the user that these modules match their expectations. Check with the user which modules they want tests written for.
+   Check with the user that these modules match their expectations. Check with the user which modules they want tests written for.
 
-5. Once you have a complete understanding of the problem and solution, use the template below to write the PRD. The PRD should be submitted as a GitHub issue.
+5. Once you have a complete understanding of the problem and solution, use the template below to write the PRD, then submit it as an issue.
 
 <prd-template>
 
@@ -72,3 +83,31 @@ A description of the things that are out of scope for this PRD.
 Any further notes about the feature.
 
 </prd-template>
+
+## Submitting the PRD
+
+**GitHub:**
+
+```bash
+gh issue create \
+  --title "<title>" \
+  --label "prd" \
+  --body "$(cat <<'EOF'
+<prd content>
+EOF
+)"
+```
+
+**Azure DevOps** — ask the user which work item type to use (Epic, Feature, or Issue), since teams vary in how they model planning documents:
+
+```bash
+az boards work-item create \
+  --type "<Epic|Feature|Issue>" \
+  --title "<title>" \
+  --description "<prd content>" \
+  --org "$ORG_URL" \
+  --project "$PROJECT" \
+  -o json
+```
+
+Share the created issue/work-item URL with the user.

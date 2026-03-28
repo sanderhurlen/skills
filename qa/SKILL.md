@@ -1,11 +1,20 @@
 ---
 name: qa
-description: Interactive QA session where user reports bugs or issues conversationally, and the agent files GitHub issues. Explores the codebase in the background for context and domain language. Use when user wants to report bugs, do QA, file issues conversationally, or mentions "QA session".
+description: Interactive QA session where user reports bugs or issues conversationally, and the agent files issues (GitHub or Azure DevOps). Explores the codebase in the background for context and domain language. Use when user wants to report bugs, do QA, file issues conversationally, or mentions "QA session".
 ---
 
 # QA Session
 
-Run an interactive QA session. The user describes problems they're encountering. You clarify, explore the codebase for context, and file GitHub issues that are durable, user-focused, and use the project's domain language.
+Run an interactive QA session. The user describes problems they're encountering. You clarify, explore the codebase for context, and file issues that are durable, user-focused, and use the project's domain language.
+
+## Detect the platform first
+
+```bash
+git remote get-url origin
+```
+
+- **GitHub**: URL contains `github.com` → use `gh issue create`. Extract `owner/repo`.
+- **Azure DevOps**: URL contains `dev.azure.com` → use `az boards work-item create`. Extract `ORG_URL` and `PROJECT`.
 
 ## For each issue the user raises
 
@@ -44,9 +53,9 @@ Keep as a single issue when:
 - It's one behavior that's wrong in one place
 - The symptoms are all caused by the same root behavior
 
-### 4. File the GitHub issue(s)
+### 4. File the issue(s)
 
-Create issues with `gh issue create`. Do NOT ask the user to review first — just file and share URLs.
+Do NOT ask the user to review first — just file and share URLs.
 
 Issues must be **durable** — they should still make sense after major refactors. Write from the user's perspective.
 
@@ -122,6 +131,32 @@ When creating a breakdown:
 - **Describe behaviors, not code** — "the sync service fails to apply the patch" not "applyPatch() throws on line 42"
 - **Reproduction steps are mandatory** — if you can't determine them, ask the user
 - **Keep it concise** — a developer should be able to read the issue in 30 seconds
+
+#### Creating the issue
+
+**GitHub:**
+
+```bash
+gh issue create \
+  --title "<title>" \
+  --label "bug" \
+  --body "$(cat <<'EOF'
+<body>
+EOF
+)"
+```
+
+**Azure DevOps:**
+
+```bash
+az boards work-item create \
+  --type "Bug" \
+  --title "<title>" \
+  --description "<body>" \
+  --org "$ORG_URL" \
+  --project "$PROJECT" \
+  -o json
+```
 
 After filing, print all issue URLs (with blocking relationships summarized) and ask: "Next issue, or are we done?"
 

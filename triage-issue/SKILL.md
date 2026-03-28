@@ -1,11 +1,20 @@
 ---
 name: triage-issue
-description: Triage a bug or issue by exploring the codebase to find root cause, then create a GitHub issue with a TDD-based fix plan. Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem.
+description: Triage a bug or issue by exploring the codebase to find root cause, then create an issue (GitHub or Azure DevOps) with a TDD-based fix plan. Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem.
 ---
 
 # Triage Issue
 
-Investigate a reported problem, find its root cause, and create a GitHub issue with a TDD fix plan. This is a mostly hands-off workflow - minimize questions to the user.
+Investigate a reported problem, find its root cause, and create an issue with a TDD fix plan. This is a mostly hands-off workflow - minimize questions to the user.
+
+## Detect the platform first
+
+```bash
+git remote get-url origin
+```
+
+- **GitHub**: URL contains `github.com` → use `gh issue create`. Extract `owner/repo`.
+- **Azure DevOps**: URL contains `dev.azure.com` → use `az boards work-item create`. Extract `ORG_URL` and `PROJECT`.
 
 ## Process
 
@@ -54,12 +63,13 @@ Rules:
 - Include a final refactor step if needed
 - **Durability**: Only suggest fixes that would survive radical codebase changes. Describe behaviors and contracts, not internal structure. Tests assert on observable outcomes (API responses, UI state, user-visible effects), not internal state. A good suggestion reads like a spec; a bad one reads like a diff.
 
-### 5. Create the GitHub issue
+### 5. Create the issue
 
-Create a GitHub issue using `gh issue create` with the template below. Do NOT ask the user to review before creating - just create it and share the URL.
+Do NOT ask the user to review before creating — just create it and share the URL.
 
-<issue-template>
+Use this template for the body:
 
+```
 ## Problem
 
 A clear description of the bug or issue, including:
@@ -96,7 +106,30 @@ A numbered list of RED-GREEN cycles:
 - [ ] Criterion 2
 - [ ] All new tests pass
 - [ ] Existing tests still pass
+```
 
-</issue-template>
+**GitHub:**
+
+```bash
+gh issue create \
+  --title "<title>" \
+  --label "bug" \
+  --body "$(cat <<'EOF'
+<body>
+EOF
+)"
+```
+
+**Azure DevOps:**
+
+```bash
+az boards work-item create \
+  --type "Bug" \
+  --title "<title>" \
+  --description "<body>" \
+  --org "$ORG_URL" \
+  --project "$PROJECT" \
+  -o json
+```
 
 After creating the issue, print the issue URL and a one-line summary of the root cause.

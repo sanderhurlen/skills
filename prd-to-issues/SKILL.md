@@ -1,19 +1,38 @@
 ---
 name: prd-to-issues
-description: Break a PRD into independently-grabbable GitHub issues using tracer-bullet vertical slices. Use when user wants to convert a PRD to issues, create implementation tickets, or break down a PRD into work items.
+description: Break a PRD into independently-grabbable issues (GitHub or Azure DevOps) using tracer-bullet vertical slices. Use when user wants to convert a PRD to issues, create implementation tickets, or break down a PRD into work items.
 ---
 
 # PRD to Issues
 
-Break a PRD into independently-grabbable GitHub issues using vertical slices (tracer bullets).
+Break a PRD into independently-grabbable issues using vertical slices (tracer bullets). Works with GitHub and Azure DevOps.
+
+## Detect the platform first
+
+```bash
+git remote get-url origin
+```
+
+- **GitHub**: URL contains `github.com` → use `gh` CLI. Extract `owner/repo`.
+- **Azure DevOps**: URL contains `dev.azure.com` → use `az` CLI. Extract `ORG_URL` and `PROJECT`.
 
 ## Process
 
 ### 1. Locate the PRD
 
-Ask the user for the PRD GitHub issue number (or URL).
+Ask the user for the PRD issue/work-item number (or URL).
 
-If the PRD is not already in your context window, fetch it with `gh issue view <number>` (with comments).
+If the PRD is not already in your context window, fetch it:
+
+**GitHub:**
+```bash
+gh issue view <number> --comments
+```
+
+**Azure DevOps:**
+```bash
+az boards work-item show --id <number> --org "$ORG_URL" --project "$PROJECT" -o json
+```
 
 ### 2. Explore the codebase (optional)
 
@@ -49,13 +68,13 @@ Ask the user:
 
 Iterate until the user approves the breakdown.
 
-### 5. Create the GitHub issues
+### 5. Create the issues
 
-For each approved slice, create a GitHub issue using `gh issue create`. Use the issue body template below.
+For each approved slice, create an issue. Create in dependency order (blockers first) so you can reference real issue numbers in the "Blocked by" field.
 
-Create issues in dependency order (blockers first) so you can reference real issue numbers in the "Blocked by" field.
+Use this body for each issue:
 
-<issue-template>
+```
 ## Parent PRD
 
 #<prd-issue-number>
@@ -82,7 +101,29 @@ Reference by number from the parent PRD:
 
 - User story 3
 - User story 7
+```
 
-</issue-template>
+**GitHub:**
 
-Do NOT close or modify the parent PRD issue.
+```bash
+gh issue create \
+  --title "<title>" \
+  --body "$(cat <<'EOF'
+<body>
+EOF
+)"
+```
+
+**Azure DevOps:**
+
+```bash
+az boards work-item create \
+  --type "Issue" \
+  --title "<title>" \
+  --description "<body>" \
+  --org "$ORG_URL" \
+  --project "$PROJECT" \
+  -o json
+```
+
+Do NOT close or modify the parent PRD issue/work-item.
